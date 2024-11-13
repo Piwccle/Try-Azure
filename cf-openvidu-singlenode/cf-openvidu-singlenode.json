@@ -1,0 +1,571 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.30.23.60470",
+      "templateHash": "15410759471635167273"
+    }
+  },
+  "parameters": {
+    "stackName": {
+      "type": "string",
+      "metadata": {
+        "description": "Stack name"
+      }
+    },
+    "certificateType": {
+      "type": "string",
+      "defaultValue": "selfsigned",
+      "allowedValues": [
+        "selfsigned",
+        "owncert",
+        "letsencrypt"
+      ],
+      "metadata": {
+        "description": "[selfsigned] Not recommended for production use. If you don't have a FQDN, (DomainName parameter) you can use this option to generate a self-signed certificate.\n[owncert] Valid for productions environments. If you have a FQDN, (DomainName parameter)\nand an Elastic IP, you can use this option to use your own certificate.\n[letsencrypt] Valid for production environments. If you have a FQDN, (DomainName parameter)\nand an Elastic IP, you can use this option to generate a Let's Encrypt certificate.\n"
+      }
+    },
+    "publicIpAddress": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Previously created Public IP address for the OpenVidu Deployment. Blank will generate a public IP"
+      }
+    },
+    "publicIpAddressResourceName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Name of the PublicIPAddress resource in your azure if you have a resource of publicIPAddress"
+      }
+    },
+    "domainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "Domain name for the OpenVidu Deployment. Black will generate default domain"
+      }
+    },
+    "ownPublicCertificate": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "If certificate type is 'owncert', this parameter will be used to specify the public certificate"
+      }
+    },
+    "ownPrivateCertificate": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "If certificate type is 'owncert', this parameter will be used to specify the private certificate"
+      }
+    },
+    "letsEncryptEmail": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "If certificate type is 'letsencrypt', this email will be used for Let's Encrypt notifications"
+      }
+    },
+    "turnDomainName": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "(Optional) Domain name for the TURN server with TLS. Only needed if your users are behind restrictive firewalls"
+      }
+    },
+    "turnOwnPublicCertificate": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "(Optional) This setting is applicable if the certificate type is set to 'owncert' and the TurnDomainName is specified."
+      }
+    },
+    "turnOwnPrivateCertificate": {
+      "type": "string",
+      "defaultValue": "",
+      "metadata": {
+        "description": "(Optional) This setting is applicable if the certificate type is set to 'owncert' and the TurnDomainName is specified."
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all the resources"
+      }
+    },
+    "instanceType": {
+      "type": "string",
+      "defaultValue": "Standard_B2s",
+      "allowedValues": [
+        "Standard_B1s",
+        "Standard_B1ms",
+        "Standard_B2s",
+        "Standard_B2ms",
+        "Standard_B4ms",
+        "Standard_B8ms",
+        "Standard_D2_v3",
+        "Standard_D4_v3",
+        "Standard_D8_v3",
+        "Standard_D16_v3",
+        "Standard_D32_v3",
+        "Standard_D48_v3",
+        "Standard_D64_v3",
+        "Standard_D2_v4",
+        "Standard_D4_v4",
+        "Standard_D8_v4",
+        "Standard_D16_v4",
+        "Standard_D32_v4",
+        "Standard_D48_v4",
+        "Standard_D64_v4",
+        "Standard_D96_v4",
+        "Standard_D2_v5",
+        "Standard_D4_v5",
+        "Standard_D8_v5",
+        "Standard_D16_v5",
+        "Standard_D32_v5",
+        "Standard_D48_v5",
+        "Standard_D64_v5",
+        "Standard_D96_v5",
+        "Standard_F2",
+        "Standard_F4",
+        "Standard_F8",
+        "Standard_F16",
+        "Standard_F32",
+        "Standard_F64",
+        "Standard_F72",
+        "Standard_F2s_v2",
+        "Standard_F4s_v2",
+        "Standard_F8s_v2",
+        "Standard_F16s_v2",
+        "Standard_F32s_v2",
+        "Standard_F64s_v2",
+        "Standard_F72s_v2",
+        "Standard_E2_v3",
+        "Standard_E4_v3",
+        "Standard_E8_v3",
+        "Standard_E16_v3",
+        "Standard_E32_v3",
+        "Standard_E48_v3",
+        "Standard_E64_v3",
+        "Standard_E96_v3",
+        "Standard_E2_v4",
+        "Standard_E4_v4",
+        "Standard_E8_v4",
+        "Standard_E16_v4",
+        "Standard_E32_v4",
+        "Standard_E48_v4",
+        "Standard_E64_v4",
+        "Standard_E2_v5",
+        "Standard_E4_v5",
+        "Standard_E8_v5",
+        "Standard_E16_v5",
+        "Standard_E32_v5",
+        "Standard_E48_v5",
+        "Standard_E64_v5",
+        "Standard_E96_v5",
+        "Standard_M64",
+        "Standard_M128",
+        "Standard_M208ms_v2",
+        "Standard_M416ms_v2",
+        "Standard_L4s_v2",
+        "Standard_L8s_v2",
+        "Standard_L16s_v2",
+        "Standard_L32s_v2",
+        "Standard_L64s_v2",
+        "Standard_L80s_v2",
+        "Standard_NC6",
+        "Standard_NC12",
+        "Standard_NC24",
+        "Standard_NC24r",
+        "Standard_ND6s",
+        "Standard_ND12s",
+        "Standard_ND24s",
+        "Standard_ND24rs",
+        "Standard_NV6",
+        "Standard_NV12",
+        "Standard_NV24",
+        "Standard_H8",
+        "Standard_H16",
+        "Standard_H16r",
+        "Standard_H16mr",
+        "Standard_HB120rs_v2",
+        "Standard_HC44rs",
+        "Standard_DC2s",
+        "Standard_DC4s",
+        "Standard_DC2s_v2",
+        "Standard_DC4s_v2",
+        "Standard_DC8s_v2",
+        "Standard_DC16s_v2",
+        "Standard_DC32s_v2",
+        "Standard_A1_v2",
+        "Standard_A2_v2",
+        "Standard_A4_v2",
+        "Standard_A8_v2",
+        "Standard_A2m_v2",
+        "Standard_A4m_v2",
+        "Standard_A8m_v2"
+      ],
+      "metadata": {
+        "description": "Specifies the azure vm size for your OpenVidu instance"
+      }
+    },
+    "adminUsername": {
+      "type": "string",
+      "metadata": {
+        "description": "Username for the Virtual Machine."
+      }
+    },
+    "authenticationType": {
+      "type": "string",
+      "defaultValue": "sshPublicKey",
+      "allowedValues": [
+        "sshPublicKey",
+        "password"
+      ],
+      "metadata": {
+        "description": "Name of an existing SSH key to enable SSH access to the Deployment."
+      }
+    },
+    "adminPasswordOrKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "SSH Key or password for the Virtual Machine. SSH key is recommended."
+      }
+    }
+  },
+  "variables": {
+    "copy": [
+      {
+        "name": "allPartsValid",
+        "count": "[length(variables('domainParts'))]",
+        "input": "[and(and(and(and(and(greaterOrEquals(length(variables('domainParts')[copyIndex('allPartsValid')]), 1), lessOrEquals(length(variables('domainParts')[copyIndex('allPartsValid')]), 63)), not(empty(variables('domainParts')[copyIndex('allPartsValid')]))), equals(variables('domainParts')[copyIndex('allPartsValid')], toLower(variables('domainParts')[copyIndex('allPartsValid')]))), not(contains(variables('domainParts')[copyIndex('allPartsValid')], '--'))), empty(replace(variables('domainParts')[copyIndex('allPartsValid')], '[a-z0-9-]', '')))]"
+      }
+    ],
+    "isEmptyIp": "[equals(parameters('publicIpAddress'), '')]",
+    "ipSegments": "[split(parameters('publicIpAddress'), '.')]",
+    "isFourSegments": "[equals(length(variables('ipSegments')), 4)]",
+    "seg1valid": "[if(variables('isEmptyIp'), true(), and(greaterOrEquals(int(variables('ipSegments')[0]), 0), lessOrEquals(int(variables('ipSegments')[0]), 255)))]",
+    "seg2valid": "[if(variables('isEmptyIp'), true(), and(greaterOrEquals(int(variables('ipSegments')[1]), 0), lessOrEquals(int(variables('ipSegments')[1]), 255)))]",
+    "seg3valid": "[if(variables('isEmptyIp'), true(), and(greaterOrEquals(int(variables('ipSegments')[2]), 0), lessOrEquals(int(variables('ipSegments')[2]), 255)))]",
+    "seg4valid": "[if(variables('isEmptyIp'), true(), and(greaterOrEquals(int(variables('ipSegments')[3]), 0), lessOrEquals(int(variables('ipSegments')[3]), 255)))]",
+    "isValidIP": "[and(and(and(and(and(not(variables('isEmptyIp')), variables('isFourSegments')), variables('seg1valid')), variables('seg2valid')), variables('seg3valid')), variables('seg4valid'))]",
+    "isEmptyDomain": "[equals(parameters('domainName'), '')]",
+    "domainParts": "[split(parameters('domainName'), '.')]",
+    "validNumberParts": "[greaterOrEquals(length(variables('domainParts')), 2)]",
+    "isDomainValid": "[and(and(not(variables('isEmptyDomain')), variables('validNumberParts')), not(contains(variables('allPartsValid'), false())))]",
+    "locationToLower": "[toLower(replace(parameters('location'), ' ', '-'))]",
+    "networkSettings": {
+      "privateIPaddressNetInterface": "10.0.0.5",
+      "vNetAddressPrefix": "10.0.0.0/16",
+      "subnetAddressPrefix": "10.0.0.0/24",
+      "netInterfaceName": "[format('{0}-netInteface', parameters('stackName'))]",
+      "vNetName": "[format('{0}-vnet', parameters('stackName'))]",
+      "subnetName": "default"
+    },
+    "openviduVMSettings": {
+      "vmName": "[format('{0}-VM-CE', parameters('stackName'))]",
+      "osDiskType": "StandardSSD_LRS",
+      "ubuntuOSVersion": {
+        "publisher": "Canonical",
+        "offer": "0001-com-ubuntu-server-jammy",
+        "sku": "22_04-lts-gen2",
+        "version": "latest"
+      },
+      "linuxConfiguration": {
+        "disablePasswordAuthentication": true,
+        "ssh": {
+          "publicKeys": [
+            {
+              "path": "[format('/home/{0}/.ssh/authorized_keys', parameters('adminUsername'))]",
+              "keyData": "[parameters('adminPasswordOrKey')]"
+            }
+          ]
+        }
+      }
+    },
+    "installScript": "#!/bin/bash -x\nOPENVIDU_VERSION=main\nDOMAIN=\n\napt-get update && apt-get install -y \\\n  curl \\\n  unzip \\\n  jq \\\n  wget\n\n# Install aws-cli\n# curl \"https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip\" -o \"awscliv2.zip\"\n# unzip -qq awscliv2.zip\n# ./aws/install\n# rm -rf awscliv2.zip aws\n\n# Token for IMDSv2\n# TOKEN=$(curl -X PUT \"http://169.254.169.254/latest/api/token\" -H \"X-aws-ec2-metadata-token-ttl-seconds: 21600\")\n\n# Configure Domain\nif [[ \"${domainName}\" == '' ]]; then\n  [ ! -d \"/usr/share/openvidu\" ] && mkdir -p /usr/share/openvidu\n  #PublicHostname=$(curl -s -H \"X-aws-ec2-metadata-token: $TOKEN\" http://169.254.169.254/latest/meta-data/public-hostname)\n  DOMAIN=$PublicHostname\n  echo $PublicHostname > /usr/share/openvidu/old-host-name\nelse\n  DOMAIN=${domainName}\nfi\n# DOMAIN=\"$(/usr/local/bin/store_secret.sh save DOMAIN_NAME \"$DOMAIN\")\"\n\n# Store usernames and generate random passwords\nREDIS_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate REDIS_PASSWORD)\"\nMONGO_ADMIN_USERNAME=\"$(/usr/local/bin/store_secret.sh save MONGO_ADMIN_USERNAME \"mongoadmin\")\"\nMONGO_ADMIN_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate MONGO_ADMIN_PASSWORD)\"\nMINIO_ACCESS_KEY=\"$(/usr/local/bin/store_secret.sh save MINIO_ACCESS_KEY \"minioadmin\")\"\nMINIO_SECRET_KEY=\"$(/usr/local/bin/store_secret.sh generate MINIO_SECRET_KEY)\"\nDASHBOARD_ADMIN_USERNAME=\"$(/usr/local/bin/store_secret.sh save DASHBOARD_ADMIN_USERNAME \"dashboardadmin\")\"\nDASHBOARD_ADMIN_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate DASHBOARD_ADMIN_PASSWORD)\"\nGRAFANA_ADMIN_USERNAME=\"$(/usr/local/bin/store_secret.sh save GRAFANA_ADMIN_USERNAME \"grafanaadmin\")\"\nGRAFANA_ADMIN_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate GRAFANA_ADMIN_PASSWORD)\"\nDEFAULT_APP_USERNAME=\"$(/usr/local/bin/store_secret.sh save DEFAULT_APP_USERNAME \"calluser\")\"\nDEFAULT_APP_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_PASSWORD)\"\nDEFAULT_APP_ADMIN_USERNAME=\"$(/usr/local/bin/store_secret.sh save DEFAULT_APP_ADMIN_USERNAME \"calladmin\")\"\nDEFAULT_APP_ADMIN_PASSWORD=\"$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_ADMIN_PASSWORD)\"\nLIVEKIT_API_KEY=\"$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_KEY \"API\" 12)\"\nLIVEKIT_API_SECRET=\"$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_SECRET)\"\n\n# Base command\nINSTALL_COMMAND=\"sh <(curl -fsSL http://get.openvidu.io/community/singlenode/$OPENVIDU_VERSION/install.sh)\"\n\n# Common arguments\nCOMMON_ARGS=(\n  \"--no-tty\"\n  \"--install\"\n  \"--environment=aws\"\n  \"--deployment-type=single_node\"\n  \"--domain-name=$DOMAIN\"\n  \"--enabled-modules=observability,app\"\n  \"--redis-password=$REDIS_PASSWORD\"\n  \"--mongo-admin-user=$MONGO_ADMIN_USERNAME\"\n  \"--mongo-admin-password=$MONGO_ADMIN_PASSWORD\"\n  \"--minio-access-key=$MINIO_ACCESS_KEY\"\n  \"--minio-secret-key=$MINIO_SECRET_KEY\"\n  \"--dashboard-admin-user=$DASHBOARD_ADMIN_USERNAME\"\n  \"--dashboard-admin-password=$DASHBOARD_ADMIN_PASSWORD\"\n  \"--grafana-admin-user=$GRAFANA_ADMIN_USERNAME\"\n  \"--grafana-admin-password=$GRAFANA_ADMIN_PASSWORD\"\n  \"--default-app-user=$DEFAULT_APP_USERNAME\"\n  \"--default-app-password=$DEFAULT_APP_PASSWORD\"\n  \"--default-app-admin-user=$DEFAULT_APP_ADMIN_USERNAME\"\n  \"--default-app-admin-password=$DEFAULT_APP_ADMIN_PASSWORD\"\n  \"--livekit-api-key=$LIVEKIT_API_KEY\"\n  \"--livekit-api-secret=$LIVEKIT_API_SECRET\"\n)\n\n# Turn with TLS\nif [[ \"${TurnDomainName}\" != '' ]]; then\n  LIVEKIT_TURN_DOMAIN_NAME=$(/usr/local/bin/store_secret.sh save LIVEKIT_TURN_DOMAIN_NAME \"${TurnDomainName}\")\n  COMMON_ARGS+=(\n    \"--turn-domain-name=$LIVEKIT_TURN_DOMAIN_NAME\"\n  )\nfi\n\n# Certificate arguments\nif [[ \"${CertificateType}\" == \"selfsigned\" ]]; then\n  CERT_ARGS=(\n    \"--certificate-type=selfsigned\"\n  )\nelif [[ \"${CertificateType}\" == \"letsencrypt\" ]]; then\n  LETSENCRYPT_EMAIL=$(/usr/local/bin/store_secret.sh save LETSENCRYPT_EMAIL \"${LetsEncryptEmail}\")\n  CERT_ARGS=(\n    \"--certificate-type=letsencrypt\"\n    \"--letsencrypt-email=$LETSENCRYPT_EMAIL\"\n  )\nelse\n  # Download owncert files\n  mkdir -p /tmp/owncert\n  wget -O /tmp/owncert/fullchain.pem ${OwnPublicCertificate}\n  wget -O /tmp/owncert/privkey.pem ${OwnPrivateCertificate}\n\n  # Convert to base64\n  OWN_CERT_CRT=$(base64 -w 0 /tmp/owncert/fullchain.pem)\n  OWN_CERT_KEY=$(base64 -w 0 /tmp/owncert/privkey.pem)\n\n  CERT_ARGS=(\n    \"--certificate-type=owncert\"\n    \"--owncert-public-key=$OWN_CERT_CRT\"\n    \"--owncert-private-key=$OWN_CERT_KEY\"\n  )\n\n  # Turn with TLS and own certificate\n  if [[ \"${TurnDomainName}\" != '' ]]; then\n    # Download owncert files\n    mkdir -p /tmp/owncert-turn\n    wget -O /tmp/owncert-turn/fullchain.pem ${TurnOwnPublicCertificate}\n    wget -O /tmp/owncert-turn/privkey.pem ${TurnOwnPrivateCertificate}\n\n    # Convert to base64\n    OWN_CERT_CRT_TURN=$(base64 -w 0 /tmp/owncert-turn/fullchain.pem)\n    OWN_CERT_KEY_TURN=$(base64 -w 0 /tmp/owncert-turn/privkey.pem)\n\n    CERT_ARGS+=(\n      \"--turn-owncert-private-key=$OWN_CERT_KEY_TURN\"\n      \"--turn-owncert-public-key=$OWN_CERT_CRT_TURN\"\n    )\n  fi\nfi\n\n# Construct the final command with all arguments\nFINAL_COMMAND=\"$INSTALL_COMMAND $(printf \"%s \" \"${!COMMON_ARGS[@]}\") $(printf \"%s \" \"${!CERT_ARGS[@]}\")\"\n\n# Install OpenVidu\nexec bash -c \"$FINAL_COMMAND\"\n"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2023-09-01",
+      "name": "[variables('openviduVMSettings').vmName]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('instanceType')]"
+        },
+        "storageProfile": {
+          "osDisk": {
+            "createOption": "FromImage",
+            "managedDisk": {
+              "storageAccountType": "[variables('openviduVMSettings').osDiskType]"
+            }
+          },
+          "imageReference": "[variables('openviduVMSettings').ubuntuOSVersion]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('networkSettings').netInterfaceName)]"
+            }
+          ]
+        },
+        "osProfile": {
+          "computerName": "[variables('openviduVMSettings').vmName]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPasswordOrKey')]",
+          "linuxConfiguration": "[if(equals(parameters('authenticationType'), 'password'), null(), variables('openviduVMSettings').linuxConfiguration)]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('networkSettings').netInterfaceName)]"
+      ]
+    },
+    {
+      "condition": "[equals(variables('isEmptyIp'), true())]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2023-11-01",
+      "name": "[format('{0}-publicIP', parameters('stackName'))]",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard",
+        "tier": "Regional"
+      },
+      "properties": {
+        "publicIPAddressVersion": "IPv4",
+        "publicIPAllocationMethod": "Static",
+        "dnsSettings": {
+          "domainNameLabel": "[if(variables('isEmptyDomain'), format('{0}', toLower(parameters('stackName'))), parameters('domainName'))]"
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('networkSettings').vNetName]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('networkSettings').vNetAddressPrefix]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('networkSettings').subnetName]",
+            "properties": {
+              "addressPrefix": "[variables('networkSettings').subnetAddressPrefix]",
+              "privateEndpointNetworkPolicies": "Disabled",
+              "privateLinkServiceNetworkPolicies": "Enabled",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('stackName')))]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('stackName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2023-11-01",
+      "name": "[variables('networkSettings').netInterfaceName]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('networkSettings').vNetName, variables('networkSettings').subnetName)]"
+              },
+              "publicIPAddress": {
+                "id": "[if(variables('isEmptyIp'), resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('stackName'))), resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpAddressResourceName')))]"
+              }
+            }
+          }
+        ],
+        "networkSecurityGroup": {
+          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('stackName')))]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/publicIPAddresses', format('{0}-publicIP', parameters('stackName')))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', variables('networkSettings').vNetName)]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', format('{0}-nsg', parameters('stackName')))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "apiVersion": "2023-11-01",
+      "name": "[format('{0}-nsg', parameters('stackName'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "securityRules": [
+          {
+            "name": "SSH",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "22",
+              "access": "Allow",
+              "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "HTTP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "80",
+              "access": "Allow",
+              "priority": 110,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "HTTPS",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443",
+              "access": "Allow",
+              "priority": 120,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "TURN",
+            "properties": {
+              "protocol": "Udp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "443",
+              "access": "Allow",
+              "priority": 130,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "RTMP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "1935",
+              "access": "Allow",
+              "priority": 140,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "WebRTC_over_TCP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "7881",
+              "access": "Allow",
+              "priority": 150,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "WebRTC_using_WHIP",
+            "properties": {
+              "protocol": "Udp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "7885",
+              "access": "Allow",
+              "priority": 160,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "MinIO",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRange": "9000",
+              "access": "Allow",
+              "priority": 170,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "WebRTC_traffic_UDP",
+            "properties": {
+              "protocol": "Udp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRanges": [
+                "50000",
+                "60000"
+              ],
+              "access": "Allow",
+              "priority": 180,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "WebRTC_traffic_TCP",
+            "properties": {
+              "protocol": "Tcp",
+              "sourceAddressPrefix": "*",
+              "sourcePortRange": "*",
+              "destinationAddressPrefix": "*",
+              "destinationPortRanges": [
+                "50000",
+                "60000"
+              ],
+              "access": "Allow",
+              "priority": 190,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "ipValidationStatus": {
+      "type": "string",
+      "value": "[if(variables('isValidIP'), 'IP address is valid', 'IP address not valid')]"
+    },
+    "domainValidationStatus": {
+      "type": "string",
+      "value": "[if(variables('isDomainValid'), 'Domain is valid', 'Domain is not valid')]"
+    },
+    "ownCertValidationStatus": {
+      "type": "string",
+      "value": "[if(and(and(equals(parameters('certificateType'), 'owncert'), not(equals(parameters('ownPrivateCertificate'), ''))), not(equals(parameters('ownPublicCertificate'), ''))), 'owncert selected and valid', 'You need to fill ''Own Public Certificate'' and ''Own Private Certificate''')]"
+    },
+    "letsEncryptValidationStatus": {
+      "type": "string",
+      "value": "[if(and(equals(parameters('certificateType'), 'letsencrypt'), not(equals(parameters('letsEncryptEmail'), ''))), 'letsEncrypt selected and valid', 'You need to fill ''Lets Encrypt Email''')]"
+    }
+  }
+}
