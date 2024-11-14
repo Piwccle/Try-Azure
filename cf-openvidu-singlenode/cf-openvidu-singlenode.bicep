@@ -229,7 +229,22 @@ var openviduVMSettings = {
   }
 }
 
-var installScript = '''
+var fqdn = isEmptyIp ? publicIP_OV.properties.dnsSettings.fqdn : domainName
+
+//Parms for not string interpolation support for multiline
+var stringInterpolationParams = {
+  domainName: domainName
+  fqdn: fqdn
+  turnDomainName: turnDomainName
+  certificateType: certificateType
+  letsEncryptEmail: letsEncryptEmail
+  ownPublicCertificate: ownPublicCertificate
+  ownPrivateCertificate: ownPrivateCertificate
+  turnOwnPublicCertificate: turnOwnPublicCertificate
+  turnOwnPrivateCertificate: turnOwnPrivateCertificate
+}
+
+var installScriptTemplate = '''
 #!/bin/bash -x
 OPENVIDU_VERSION=main
 DOMAIN=
@@ -253,29 +268,29 @@ apt-get update && apt-get install -y \
 if [[ "${domainName}" == '' ]]; then
   [ ! -d "/usr/share/openvidu" ] && mkdir -p /usr/share/openvidu
   #PublicHostname=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-hostname)
-  DOMAIN=$PublicHostname
-  echo $PublicHostname > /usr/share/openvidu/old-host-name
+  DOMAIN=${fqdn}
+  echo ${fqdn} > /usr/share/openvidu/old-host-name
 else
   DOMAIN=${domainName}
 fi
 # DOMAIN="$(/usr/local/bin/store_secret.sh save DOMAIN_NAME "$DOMAIN")"
 
 # Store usernames and generate random passwords
-REDIS_PASSWORD="$(/usr/local/bin/store_secret.sh generate REDIS_PASSWORD)"
-MONGO_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save MONGO_ADMIN_USERNAME "mongoadmin")"
-MONGO_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate MONGO_ADMIN_PASSWORD)"
-MINIO_ACCESS_KEY="$(/usr/local/bin/store_secret.sh save MINIO_ACCESS_KEY "minioadmin")"
-MINIO_SECRET_KEY="$(/usr/local/bin/store_secret.sh generate MINIO_SECRET_KEY)"
-DASHBOARD_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save DASHBOARD_ADMIN_USERNAME "dashboardadmin")"
-DASHBOARD_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate DASHBOARD_ADMIN_PASSWORD)"
-GRAFANA_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save GRAFANA_ADMIN_USERNAME "grafanaadmin")"
-GRAFANA_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate GRAFANA_ADMIN_PASSWORD)"
-DEFAULT_APP_USERNAME="$(/usr/local/bin/store_secret.sh save DEFAULT_APP_USERNAME "calluser")"
-DEFAULT_APP_PASSWORD="$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_PASSWORD)"
-DEFAULT_APP_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save DEFAULT_APP_ADMIN_USERNAME "calladmin")"
-DEFAULT_APP_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_ADMIN_PASSWORD)"
-LIVEKIT_API_KEY="$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_KEY "API" 12)"
-LIVEKIT_API_SECRET="$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_SECRET)"
+# REDIS_PASSWORD="$(/usr/local/bin/store_secret.sh generate REDIS_PASSWORD)"
+# MONGO_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save MONGO_ADMIN_USERNAME "mongoadmin")"
+# MONGO_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate MONGO_ADMIN_PASSWORD)"
+# MINIO_ACCESS_KEY="$(/usr/local/bin/store_secret.sh save MINIO_ACCESS_KEY "minioadmin")"
+# MINIO_SECRET_KEY="$(/usr/local/bin/store_secret.sh generate MINIO_SECRET_KEY)"
+# DASHBOARD_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save DASHBOARD_ADMIN_USERNAME "dashboardadmin")"
+# DASHBOARD_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate DASHBOARD_ADMIN_PASSWORD)"
+# GRAFANA_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save GRAFANA_ADMIN_USERNAME "grafanaadmin")"
+# GRAFANA_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate GRAFANA_ADMIN_PASSWORD)"
+# DEFAULT_APP_USERNAME="$(/usr/local/bin/store_secret.sh save DEFAULT_APP_USERNAME "calluser")"
+# DEFAULT_APP_PASSWORD="$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_PASSWORD)"
+# DEFAULT_APP_ADMIN_USERNAME="$(/usr/local/bin/store_secret.sh save DEFAULT_APP_ADMIN_USERNAME "calladmin")"
+# DEFAULT_APP_ADMIN_PASSWORD="$(/usr/local/bin/store_secret.sh generate DEFAULT_APP_ADMIN_PASSWORD)"
+# LIVEKIT_API_KEY="$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_KEY "API" 12)"
+# LIVEKIT_API_SECRET="$(/usr/local/bin/store_secret.sh generate LIVEKIT_API_SECRET)"
 
 # Base command
 INSTALL_COMMAND="sh <(curl -fsSL http://get.openvidu.io/community/singlenode/$OPENVIDU_VERSION/install.sh)"
@@ -284,51 +299,36 @@ INSTALL_COMMAND="sh <(curl -fsSL http://get.openvidu.io/community/singlenode/$OP
 COMMON_ARGS=(
   "--no-tty"
   "--install"
-  "--environment=aws"
+  "--environment=azure"
   "--deployment-type=single_node"
   "--domain-name=$DOMAIN"
   "--enabled-modules=observability,app"
-  "--redis-password=$REDIS_PASSWORD"
-  "--mongo-admin-user=$MONGO_ADMIN_USERNAME"
-  "--mongo-admin-password=$MONGO_ADMIN_PASSWORD"
-  "--minio-access-key=$MINIO_ACCESS_KEY"
-  "--minio-secret-key=$MINIO_SECRET_KEY"
-  "--dashboard-admin-user=$DASHBOARD_ADMIN_USERNAME"
-  "--dashboard-admin-password=$DASHBOARD_ADMIN_PASSWORD"
-  "--grafana-admin-user=$GRAFANA_ADMIN_USERNAME"
-  "--grafana-admin-password=$GRAFANA_ADMIN_PASSWORD"
-  "--default-app-user=$DEFAULT_APP_USERNAME"
-  "--default-app-password=$DEFAULT_APP_PASSWORD"
-  "--default-app-admin-user=$DEFAULT_APP_ADMIN_USERNAME"
-  "--default-app-admin-password=$DEFAULT_APP_ADMIN_PASSWORD"
-  "--livekit-api-key=$LIVEKIT_API_KEY"
-  "--livekit-api-secret=$LIVEKIT_API_SECRET"
 )
 
 # Turn with TLS
-if [[ "${TurnDomainName}" != '' ]]; then
-  LIVEKIT_TURN_DOMAIN_NAME=$(/usr/local/bin/store_secret.sh save LIVEKIT_TURN_DOMAIN_NAME "${TurnDomainName}")
+if [[ "${turnDomainName}" != '' ]]; then
+  LIVEKIT_TURN_DOMAIN_NAME=$(/usr/local/bin/store_secret.sh save LIVEKIT_TURN_DOMAIN_NAME "${turnDomainName}")
   COMMON_ARGS+=(
     "--turn-domain-name=$LIVEKIT_TURN_DOMAIN_NAME"
   )
 fi
 
 # Certificate arguments
-if [[ "${CertificateType}" == "selfsigned" ]]; then
+if [[ "${certificateType}" == "selfsigned" ]]; then
   CERT_ARGS=(
     "--certificate-type=selfsigned"
   )
-elif [[ "${CertificateType}" == "letsencrypt" ]]; then
-  LETSENCRYPT_EMAIL=$(/usr/local/bin/store_secret.sh save LETSENCRYPT_EMAIL "${LetsEncryptEmail}")
+elif [[ "${certificateType}" == "letsencrypt" ]]; then
+  #LETSENCRYPT_EMAIL=$(/usr/local/bin/store_secret.sh save LETSENCRYPT_EMAIL "${letsEncryptEmail}")
   CERT_ARGS=(
     "--certificate-type=letsencrypt"
-    "--letsencrypt-email=$LETSENCRYPT_EMAIL"
+    "--letsencrypt-email=${letsEncryptEmail}"
   )
 else
   # Download owncert files
   mkdir -p /tmp/owncert
-  wget -O /tmp/owncert/fullchain.pem ${OwnPublicCertificate}
-  wget -O /tmp/owncert/privkey.pem ${OwnPrivateCertificate}
+  wget -O /tmp/owncert/fullchain.pem ${ownPublicCertificate}
+  wget -O /tmp/owncert/privkey.pem ${ownPrivateCertificate}
 
   # Convert to base64
   OWN_CERT_CRT=$(base64 -w 0 /tmp/owncert/fullchain.pem)
@@ -341,11 +341,11 @@ else
   )
 
   # Turn with TLS and own certificate
-  if [[ "${TurnDomainName}" != '' ]]; then
+  if [[ "${turnDomainName}" != '' ]]; then
     # Download owncert files
     mkdir -p /tmp/owncert-turn
-    wget -O /tmp/owncert-turn/fullchain.pem ${TurnOwnPublicCertificate}
-    wget -O /tmp/owncert-turn/privkey.pem ${TurnOwnPrivateCertificate}
+    wget -O /tmp/owncert-turn/fullchain.pem ${turnOwnPublicCertificate}
+    wget -O /tmp/owncert-turn/privkey.pem ${turnOwnPrivateCertificate}
 
     # Convert to base64
     OWN_CERT_CRT_TURN=$(base64 -w 0 /tmp/owncert-turn/fullchain.pem)
@@ -359,11 +359,98 @@ else
 fi
 
 # Construct the final command with all arguments
-FINAL_COMMAND="$INSTALL_COMMAND $(printf "%s " "${!COMMON_ARGS[@]}") $(printf "%s " "${!CERT_ARGS[@]}")"
+FINAL_COMMAND="$INSTALL_COMMAND $(printf "%s " "${COMMON_ARGS[@]}") $(printf "%s " "${CERT_ARGS[@]}")"
 
 # Install OpenVidu
 exec bash -c "$FINAL_COMMAND"
 '''
+
+var check_app_ready = '''
+#!/bin/bash
+while true; do
+  HTTP_STATUS=$(curl -Ik http://localhost:7880 | head -n1 | awk '{print $2}')
+  if [ $HTTP_STATUS == 200 ]; then
+    break
+  fi
+  sleep 5
+done
+'''
+
+var restart = '''
+#!/bin/bash
+set -e
+# Stop all services
+systemctl stop openvidu
+
+# Update config from secret
+/usr/local/bin/update_config_from_secret.sh
+
+# Start all services
+systemctl start openvidu
+'''
+
+var formattedTemplateInstallScript = reduce(
+  items(stringInterpolationParams),
+  { value: installScriptTemplate },
+  (curr, next) => { value: replace(curr.value, '\${${next.key}}', next.value) }
+).value
+
+var base64install = base64(formattedTemplateInstallScript)
+var base64check_app_ready = base64(check_app_ready)
+var base64restart = base64(restart)
+
+var userDataParams = {
+  base64install: base64install
+  base64check_app_ready: base64check_app_ready
+  base64restart: base64restart
+}
+
+var userDataTemplate = '''
+#!/bin/bash -x
+set -eu -o pipefail
+
+echo ${base64install} | base64 -d > /usr/local/bin/install.sh
+chmod +x /usr/local/bin/install.sh
+
+echo ${base64check_app_ready} | base64 -d > /usr/local/bin/check_app_ready.sh
+chmod +x /usr/local/bin/check_app_ready.sh
+
+echo ${base64restart} | base64 -d > /usr/local/bin/restart.sh
+chmod +x /usr/local/bin/restart.sh
+
+apt-get update && apt-get install -y
+      # python3-pip 
+      # ec2-instance-connect
+# pip3 install https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+
+# cfn-init --region ${AWS::Region} --stack ${AWS::StackId} --resource OpenviduServer
+
+export HOME="/root"
+
+# Install OpenVidu
+/usr/local/bin/install.sh || { echo "[OpenVidu] error installing OpenVidu"; exit 1; }
+
+# Start OpenVidu
+systemctl start openvidu || { echo "[OpenVidu] error starting OpenVidu"; exit 1; }
+
+# Update shared secret
+# /usr/local/bin/after_install.sh || { echo "[OpenVidu] error updating shared secret"; exit 1; }
+
+# Launch on reboot
+echo "@reboot /usr/local/bin/restart.sh" | crontab
+
+# Wait for the app
+/usr/local/bin/check_app_ready.sh
+
+# sending the finish call
+# /usr/local/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource WaitCondition --region ${AWS::Region}
+'''
+
+var userData = reduce(
+  items(userDataParams),
+  { value: userDataTemplate },
+  (curr, next) => { value: replace(curr.value, '\${${next.key}}', next.value) }
+).value
 
 resource openviduServer 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: openviduVMSettings.vmName
@@ -394,6 +481,7 @@ resource openviduServer 'Microsoft.Compute/virtualMachines@2023-09-01' = {
       adminPassword: adminPasswordOrKey
       linuxConfiguration: ((authenticationType == 'password') ? null : openviduVMSettings.linuxConfiguration)
     }
+    userData: base64(userData)
   }
 }
 
@@ -409,12 +497,13 @@ resource publicIP_OV 'Microsoft.Network/publicIPAddresses@2023-11-01' = if (isEm
     publicIPAddressVersion: 'IPv4'
     publicIPAllocationMethod: 'Static'
     dnsSettings: {
-      domainNameLabel: isEmptyDomain ? '${toLower(stackName)}' : domainName
+      domainNameLabel: isEmptyDomain ? toLower('${stackName}') : null
+      fqdn: isEmptyDomain ? null : domainName
     }
   }
 }
 
-resource publicIP_OV_ifEmpty 'Microsoft.Network/publicIPAddresses@2023-11-01' existing = if (isEmptyIp == false) {
+resource publicIP_OV_ifNotEmpty 'Microsoft.Network/publicIPAddresses@2023-11-01' existing = if (!isEmptyIp == true) {
   name: publicIpAddressResourceName
 }
 
@@ -457,7 +546,7 @@ resource netInterface_OV 'Microsoft.Network/networkInterfaces@2023-11-01' = {
             id: resourceId('Microsoft.Network/virtualNetworks/subnets', vnet_OV.name, networkSettings.subnetName)
           }
           publicIPAddress: {
-            id: isEmptyIp ? publicIP_OV.id : publicIP_OV_ifEmpty.id
+            id: isEmptyIp ? publicIP_OV.id : publicIP_OV_ifNotEmpty.id
           }
         }
       }
